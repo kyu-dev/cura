@@ -1,4 +1,8 @@
+"""Cura — point d'entrée principal."""
+
+
 def main():
+    """Lance l'application Cura."""
     print("Hello from cura!")
 
 

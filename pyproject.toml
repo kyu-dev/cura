@@ -10,3 +10,8 @@ dependencies = [
     "langgraph>=1.1.9",
     "pydantic>=2.13.3",
 ]
+
+[dependency-groups]
+dev = [
+    "pylint>=4.0.5",
+]
