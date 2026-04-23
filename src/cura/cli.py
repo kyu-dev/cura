@@ -7,10 +7,11 @@ from langchain_core.messages import AIMessage, HumanMessage
 
 load_dotenv()
 
-from cura.agent import get_graph
+from cura.agent import get_graph  # noqa: E402  # pylint: disable=wrong-import-position
 
 
 def main() -> None:
+    """Start an interactive chat session in the terminal."""
     graph = get_graph()
     config = {"configurable": {"api_key": os.getenv("MISTRAL_API_KEY")}}
     messages = []
