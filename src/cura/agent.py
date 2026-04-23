@@ -22,7 +22,9 @@ def _get_llm(config: RunnableConfig) -> ChatMistralAI:
     """Build a Mistral chat model from runtime config (BYOK)."""
     configurable = dict((config or {}).get("configurable") or {})
 
-    user_key = (configurable.get("api_key") or os.getenv("MISTRAL_API_KEY") or "").strip()
+    user_key = (
+        configurable.get("api_key") or os.getenv("MISTRAL_API_KEY") or ""
+    ).strip()
     if not user_key:
         raise ValueError(
             "Missing API key. Provide configurable.api_key or set MISTRAL_API_KEY."
