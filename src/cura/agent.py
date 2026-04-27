@@ -1,7 +1,6 @@
 """Cura simple LangGraph agent."""
 
 import os
-import threading
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import BaseMessage
@@ -10,6 +9,9 @@ from langchain_mistralai import ChatMistralAI
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 from langgraph.graph.state import CompiledStateGraph
+from langgraph.prebuilt import ToolNode, tools_condition
+
+from cura.tools.web_loader import retrieve_blog_posts
 
 
 class AgentState(TypedDict):
@@ -35,40 +37,29 @@ def _get_llm(config: RunnableConfig) -> ChatMistralAI:
     return ChatMistralAI(
         api_key=user_key,
         model=model,
+        
     )
 
 
 def chat_node(state: AgentState, config: RunnableConfig) -> dict:
     """Call the LLM with the current message history."""
-    llm = _get_llm(config)
+    llm = _get_llm(config).bind_tools([retrieve_blog_posts])
     response = llm.invoke(state["messages"])
     return {"messages": [response]}
+
+
+_TOOLS = [retrieve_blog_posts]
 
 
 def build_agent() -> CompiledStateGraph:
     """Build and compile the LangGraph agent."""
     builder = StateGraph(AgentState)
     builder.add_node("chat", chat_node)
+    builder.add_node("tools", ToolNode(_TOOLS))
     builder.add_edge(START, "chat")
-    builder.add_edge("chat", END)
+    builder.add_conditional_edges("chat", tools_condition)
+    builder.add_edge("tools", "chat")
     return builder.compile()
 
 
-_GRAPH: CompiledStateGraph | None = None
-_GRAPH_LOCK = threading.Lock()
-
-
-def get_graph() -> CompiledStateGraph:
-    """Return the compiled graph, building it once on first call."""
-    global _GRAPH  # pylint: disable=global-statement
-    if _GRAPH is None:
-        with _GRAPH_LOCK:
-            if _GRAPH is None:
-                _GRAPH = build_agent()
-    return _GRAPH
-
-
-def __getattr__(name: str) -> object:
-    if name == "graph":
-        return get_graph()
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+graph = build_agent()
